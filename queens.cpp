@@ -5,6 +5,7 @@
 #define f first
 #define s second
 #define ll long long
+#define nl '\n'
 #define pb push_back
 #define RED     "\033[31m" 
 #define RESET   "\033[0m"  
@@ -12,6 +13,7 @@
 using namespace std;
 
 vector<ll> prefix; 
+int board_size;
 
 ll choose_index(int total) {
     int chosen = (ll)((double)rand() / RAND_MAX * total);
@@ -20,10 +22,15 @@ ll choose_index(int total) {
     return chosen;
 }
 
+int maxi(int board_size) {
+    if(board_size % 2 == 0) return board_size/2 * (board_size-1);
+    else return board_size * (board_size-1)/2;
+}
+
 void mutation(vector<int>& son, double mutation_rate) {
     if ((double)rand() / RAND_MAX < mutation_rate) {
-        int target_column = rand() % 8;
-        int new_row = rand() % 8;
+        int target_column = rand() % board_size;
+        int new_row = rand() % board_size;
         son[target_column] = new_row;
     }
 }
@@ -33,9 +40,9 @@ pair<vector<int>, vector<int>> crossover(const vector<int> &dad, const vector<in
     vector<int> child1 = dad;
     vector<int> child2 = mom;
 
-    int idx_cut = (rand() % 7) + 1; 
+    int idx_cut = (rand() % board_size-1) + 1; 
 
-    for(int i = idx_cut; i < 8; i++) {
+    for(int i = idx_cut; i < board_size; i++) {
         child1[i] = mom[i];
         child2[i] = dad[i];
     }
@@ -56,14 +63,20 @@ int bs(int low, int high, ll target) {
 
 int main() {
     srand(time(NULL));
-    int vezes = 1000;
-    vector<vector<int>> tab(vezes, vector<int>(8));
+    int vezes = 300;
+    cout << "Insert board size: ";
+    board_size; cin >> board_size;
+    if(board_size <= 3) {
+        cout << "There is no way to solve this problem with a board this size." << nl;
+        return 0;
+    }
+    vector<vector<int>> tab(vezes, vector<int>(board_size));
     vector<int> ans;
     bool found = false;
 
     for(int i = 0; i < vezes; i++) {
-        for(int j = 0; j < 8; j++) {
-            tab[i][j] = rand() % 8; 
+        for(int j = 0; j < board_size; j++) {
+            tab[i][j] = rand() % board_size; 
         }
     }
     int geracao = 0;
@@ -72,24 +85,34 @@ int main() {
         prefix.assign(vezes, 0); 
         
         for(int i = 0; i < vezes; i++) {
-            int score = 0;
-            for(int j = 0; j < 8; j++) {
-                for(int k = 0; k < 8; k++) {
-                    if(k != j && tab[i][j] != tab[i][k] && abs(k - j) != abs(tab[i][k] - tab[i][j])) {
-                        score++;
-                    }
-                }
-            }
-        
-            if(score == 56) {
-                ans = tab[i];
-                found = true;
-                break;
-            }
-            
-            if(i != 0) prefix[i] = (ll)score + prefix[i-1];
-            else prefix[i] = score;
+        vector<int> rows(board_size, 0);
+        vector<int> diag1(2 * board_size - 1, 0);
+        vector<int> diag2(2 * board_size - 1, 0);
+
+        for(int j = 0; j < board_size; j++) {
+            rows[tab[i][j]]++;
+            diag1[tab[i][j] - j + board_size - 1]++;
+            diag2[tab[i][j] + j]++;
         }
+
+        int collisions = 0;
+        for(int j = 0; j < 2 * board_size - 1; j++) {
+            if(j < board_size) collisions += (rows[j] * (rows[j] - 1)) / 2;
+            collisions += (diag1[j] * (diag1[j] - 1)) / 2;
+            collisions += (diag2[j] * (diag2[j] - 1)) / 2;
+        }
+
+        int score = maxi(board_size) - collisions;
+
+        if(collisions == 0) {
+            ans = tab[i];
+            found = true;
+            break;
+        }
+
+        if(i != 0) prefix[i] = (ll)score + prefix[i-1];
+        else prefix[i] = score;
+    }
 
         if(found) break;
 
@@ -115,19 +138,19 @@ int main() {
     char symbol_queen = 'W';
     char empty_symbol = 'o';
 
-    cout << "Solution found on generation [" << geracao << "]:" << endl;
-    vector<vector<char>> board(8, vector<char>(8, empty_symbol));
+    cout << "Solution found on generation [" << geracao << "]:" << nl;
+    vector<vector<char>> board(board_size, vector<char>(board_size, empty_symbol));
 
-    for(int col = 0; col < 8; col++) {
+    for(int col = 0; col < board_size; col++) {
         board[ans[col]][col] = symbol_queen; 
     }
 
-    for(int i = 0; i < 8; i++) {
-        for(int j = 0; j < 8; j++) {
+    for(int i = 0; i < board_size; i++) {
+        for(int j = 0; j < board_size; j++) {
             if(board[i][j] == symbol_queen) {
                 cout << RED << board[i][j] << RESET << " ";
             }else cout << board[i][j] << " ";
         }
-        cout << endl;
+        cout << nl;
     }
 }
