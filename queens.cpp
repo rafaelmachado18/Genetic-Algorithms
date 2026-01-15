@@ -20,11 +20,11 @@ ll choose_index(int total) {
     return chosen;
 }
 
-void mutation(vector<int>& filho, double taxa_mutacao) {
-    if ((double)rand() / RAND_MAX < taxa_mutacao) {
-        int coluna_alvo = rand() % 8; 
-        int nova_linha = rand() % 8;  
-        filho[coluna_alvo] = nova_linha;
+void mutation(vector<int>& son, double mutation_rate) {
+    if ((double)rand() / RAND_MAX < mutation_rate) {
+        int target_column = rand() % 8;
+        int new_row = rand() % 8;
+        son[target_column] = new_row;
     }
 }
 
